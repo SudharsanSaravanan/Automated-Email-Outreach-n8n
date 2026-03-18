@@ -1,0 +1,139 @@
+{
+  "name": "Automated Email Outreach",
+  "nodes": [
+    {
+      "parameters": {
+        "pollTimes": {
+          "item": [
+            {
+              "mode": "everyMinute"
+            }
+          ]
+        },
+        "documentId": {
+          "__rl": true,
+          "value": "YOUR_GOOGLE_SHEET_ID",
+          "mode": "list",
+          "cachedResultName": "Sample Sheet"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "Sheet1",
+          "mode": "list"
+        },
+        "event": "rowAdded",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheetsTrigger",
+      "typeVersion": 1,
+      "position": [-448, 32],
+      "id": "google-sheets-trigger",
+      "name": "Google Sheets Trigger"
+    },
+    {
+      "parameters": {
+        "operation": "get",
+        "documentURL": "YOUR_GOOGLE_DOC_ID"
+      },
+      "type": "n8n-nodes-base.googleDocs",
+      "typeVersion": 2,
+      "position": [-192, 32],
+      "id": "google-docs",
+      "name": "Get Email Template"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "name": "Name",
+              "value": "={{ $('Google Sheets Trigger').item.json.Name }}",
+              "type": "string"
+            },
+            {
+              "name": "Email",
+              "value": "={{ $('Google Sheets Trigger').item.json.Email }}",
+              "type": "string"
+            },
+            {
+              "name": "content",
+              "value": "={{ $json.content }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3,
+      "position": [64, 32],
+      "id": "edit-fields",
+      "name": "Edit Fields"
+    },
+    {
+      "parameters": {
+        "sendTo": "={{$json[\"Email\"]}}",
+        "subject": "hello",
+        "message": "=Hi {{$json[\"Name\"]}},<br><br>\n\n{{$json[\"content\"].split(\"\\n\").join(\"<br>\")}}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2,
+      "position": [320, 32],
+      "id": "gmail-send",
+      "name": "Send Email"
+    },
+    {
+      "parameters": {
+        "content": "Automated Email Outreach Workflow\n\nGoogle Sheets → Client data\nGoogle Docs → Email template\nn8n → Personalization\nGmail → Sends email\n\nThis is a demo workflow. Replace IDs and connect your credentials before use.",
+        "height": 300,
+        "width": 500
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [-800, -80],
+      "typeVersion": 1,
+      "id": "note",
+      "name": "Note"
+    }
+  ],
+  "connections": {
+    "Google Sheets Trigger": {
+      "main": [
+        [
+          {
+            "node": "Get Email Template",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Email Template": {
+      "main": [
+        [
+          {
+            "node": "Edit Fields",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Edit Fields": {
+      "main": [
+        [
+          {
+            "node": "Send Email",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {},
+  "meta": {
+    "templateCredsSetupCompleted": false
+  }
+}
