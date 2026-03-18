@@ -1,4 +1,4 @@
-# Automated Email Outreach System (n8n)
+# Automated Email Outreach (n8n)
 
 ## Overview
 
