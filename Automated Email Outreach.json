@@ -4,30 +4,14 @@
     {
       "parameters": {
         "pollTimes": {
-          "item": [
-            {
-              "mode": "everyMinute"
-            }
-          ]
+          "item": [{ "mode": "everyMinute" }]
         },
-        "documentId": {
-          "__rl": true,
-          "value": "YOUR_GOOGLE_SHEET_ID",
-          "mode": "list",
-          "cachedResultName": "Sample Sheet"
-        },
-        "sheetName": {
-          "__rl": true,
-          "value": "Sheet1",
-          "mode": "list"
-        },
-        "event": "rowAdded",
-        "options": {}
+        "documentId": "YOUR_GOOGLE_SHEET_ID",
+        "sheetName": "Sheet1"
       },
       "type": "n8n-nodes-base.googleSheetsTrigger",
       "typeVersion": 1,
-      "position": [-448, 32],
-      "id": "google-sheets-trigger",
+      "position": [-400, 0],
       "name": "Google Sheets Trigger"
     },
     {
@@ -37,9 +21,8 @@
       },
       "type": "n8n-nodes-base.googleDocs",
       "typeVersion": 2,
-      "position": [-192, 32],
-      "id": "google-docs",
-      "name": "Get Email Template"
+      "position": [-200, 0],
+      "name": "Get Template"
     },
     {
       "parameters": {
@@ -61,79 +44,116 @@
               "type": "string"
             }
           ]
-        },
-        "options": {}
+        }
       },
       "type": "n8n-nodes-base.set",
       "typeVersion": 3,
-      "position": [64, 32],
-      "id": "edit-fields",
+      "position": [0, 0],
       "name": "Edit Fields"
     },
     {
       "parameters": {
+        "conditions": {
+          "combinator": "and",
+          "conditions": [
+            {
+              "leftValue": "={{$json[\"Name\"]}}",
+              "operator": {
+                "type": "string",
+                "operation": "notEmpty"
+              }
+            },
+            {
+              "leftValue": "={{$json[\"Email\"]}}",
+              "operator": {
+                "type": "string",
+                "operation": "notEmpty"
+              }
+            },
+            {
+              "leftValue": "={{$json[\"Email\"]}}",
+              "rightValue": "^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$",
+              "operator": {
+                "type": "string",
+                "operation": "regex"
+              }
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [200, 0],
+      "name": "Validate Data"
+    },
+    {
+      "parameters": {
         "sendTo": "={{$json[\"Email\"]}}",
-        "subject": "hello",
-        "message": "=Hi {{$json[\"Name\"]}},<br><br>\n\n{{$json[\"content\"].split(\"\\n\").join(\"<br>\")}}",
-        "options": {}
+        "subject": "Build a High-Converting Website for Your Business",
+        "message": "=Hi {{$json[\"Name\"]}},<br><br>{{$json[\"content\"].split(\"\\n\").join(\"<br>\")}}"
       },
       "type": "n8n-nodes-base.gmail",
       "typeVersion": 2,
-      "position": [320, 32],
-      "id": "gmail-send",
+      "position": [400, -100],
       "name": "Send Email"
     },
     {
       "parameters": {
-        "content": "Automated Email Outreach Workflow\n\nGoogle Sheets → Client data\nGoogle Docs → Email template\nn8n → Personalization\nGmail → Sends email\n\nThis is a demo workflow. Replace IDs and connect your credentials before use.",
-        "height": 300,
-        "width": 500
+        "operation": "update",
+        "documentId": "YOUR_GOOGLE_SHEET_ID",
+        "sheetName": "Sheet1",
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "Sent": "YES",
+            "Email": "={{ $json.Email }}"
+          },
+          "matchingColumns": ["Email"]
+        }
       },
-      "type": "n8n-nodes-base.stickyNote",
-      "position": [-800, -80],
-      "typeVersion": 1,
-      "id": "note",
-      "name": "Note"
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4,
+      "position": [600, -100],
+      "name": "Mark as Sent"
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "documentId": "YOUR_GOOGLE_SHEET_ID",
+        "sheetName": "Sheet1",
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "Sent": "WAITING",
+            "Email": "={{ $json.Email }}"
+          },
+          "matchingColumns": ["Email"]
+        }
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4,
+      "position": [400, 100],
+      "name": "Mark as Waiting"
     }
   ],
   "connections": {
     "Google Sheets Trigger": {
-      "main": [
-        [
-          {
-            "node": "Get Email Template",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
+      "main": [[{ "node": "Get Template", "type": "main", "index": 0 }]]
     },
-    "Get Email Template": {
-      "main": [
-        [
-          {
-            "node": "Edit Fields",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
+    "Get Template": {
+      "main": [[{ "node": "Edit Fields", "type": "main", "index": 0 }]]
     },
     "Edit Fields": {
+      "main": [[{ "node": "Validate Data", "type": "main", "index": 0 }]]
+    },
+    "Validate Data": {
       "main": [
-        [
-          {
-            "node": "Send Email",
-            "type": "main",
-            "index": 0
-          }
-        ]
+        [{ "node": "Send Email", "type": "main", "index": 0 }],
+        [{ "node": "Mark as Waiting", "type": "main", "index": 0 }]
       ]
+    },
+    "Send Email": {
+      "main": [[{ "node": "Mark as Sent", "type": "main", "index": 0 }]]
     }
-  },
-  "active": false,
-  "settings": {},
-  "meta": {
-    "templateCredsSetupCompleted": false
   }
 }
